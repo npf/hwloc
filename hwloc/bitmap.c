@@ -565,6 +565,31 @@ int hwloc_bitmap_list_sscanf(struct hwloc_bitmap_s *set, const char * __hwloc_re
   return -1;
 }
 
+int hwloc_bitmap_systemd_snprintf(char * __hwloc_restrict buf, size_t buflen, const struct hwloc_bitmap_s * __hwloc_restrict set)
+{
+    return -1;
+}
+
+int hwloc_bitmap_systemd_asprintf(char ** strp, const struct hwloc_bitmap_s * __hwloc_restrict set)
+{
+  int len;
+  char *buf;
+
+  HWLOC__BITMAP_CHECK(set);
+
+  len = hwloc_bitmap_systemd_snprintf(NULL, 0, set);
+  buf = malloc(len+1);
+  if (!buf)
+    return -1;
+  *strp = buf;
+  return hwloc_bitmap_systemd_snprintf(buf, len+1, set);
+}
+
+int hwloc_bitmap_systemd_sscanf(struct hwloc_bitmap_s *set, const char * __hwloc_restrict string)
+{
+    return -1;
+}
+
 int hwloc_bitmap_taskset_snprintf(char * __hwloc_restrict buf, size_t buflen, const struct hwloc_bitmap_s * __hwloc_restrict set)
 {
   ssize_t size = buflen;

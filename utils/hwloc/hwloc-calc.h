@@ -755,6 +755,7 @@ hwloc_calc_process_location_as_set(struct hwloc_calc_location_context_s *lcontex
         cpuset_format = HWLOC_UTILS_CPUSET_FORMAT_HWLOC;
       else
         cpuset_format = HWLOC_UTILS_CPUSET_FORMAT_TASKSET;
+        /* TODO HWLOC_UTILS_CPUSET_FORMAT_SYSTEMD? */
     }
 
     newset = hwloc_bitmap_alloc();
@@ -765,6 +766,9 @@ hwloc_calc_process_location_as_set(struct hwloc_calc_location_context_s *lcontex
       break;
     case HWLOC_UTILS_CPUSET_FORMAT_LIST:
       err = hwloc_bitmap_list_sscanf(newset, arg);
+      break;
+    case HWLOC_UTILS_CPUSET_FORMAT_SYSTEMD:
+      err = hwloc_bitmap_systemd_sscanf(newset, arg);
       break;
     case HWLOC_UTILS_CPUSET_FORMAT_TASKSET:
       err = hwloc_bitmap_taskset_sscanf(newset, arg);
