@@ -567,7 +567,12 @@ int hwloc_bitmap_list_sscanf(struct hwloc_bitmap_s *set, const char * __hwloc_re
 
 int hwloc_bitmap_systemd_snprintf(char * __hwloc_restrict buf, size_t buflen, const struct hwloc_bitmap_s * __hwloc_restrict set)
 {
-    return -1;
+    printf("count: %u, alloc: %u, infinite: %d, buf: %s\n", set->ulongs_count, set->ulongs_allocated, set->infinite, (buflen > 0)?buf:"");
+    for (unsigned int i=0; i < set->ulongs_count; i++) {
+        printf("%d: 0x%lx\n", i, set->ulongs[i]);
+    }
+    printf("\n\n");
+    return 0;
 }
 
 int hwloc_bitmap_systemd_asprintf(char ** strp, const struct hwloc_bitmap_s * __hwloc_restrict set)
