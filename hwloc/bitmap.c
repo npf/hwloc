@@ -571,44 +571,48 @@ int hwloc_bitmap_list_sscanf(struct hwloc_bitmap_s *set, const char * __hwloc_re
  *   "0xNNNN" is the size of the array in hexadecimal, max size 2^26.
  *   "0xAA [0xBB [...]]" is the cpuset mask given bytes after bytes, little endian order.
  * e.g. the output of `hwloc-calc pu:0 pu:31 pu:32 pu:63 pu:64 pu:77 --cpuset-output-format systemd` is
- *   "ay 0x0C 0x01 0x00 0x00 x80 0x01 0x00 0x00 0x80 0x01 0x20 0x00 0x00 
+ *   "ay 0x0a 0x01 0x00 0x00 x80 0x01 0x00 0x00 0x80 0x01 0x20
  * */
 #define HWLOC_SYSTEMD_ALLOWEDCPUS_PREFIX_FORMAT "ay 0x%02x"
 #define HWLOC_SYSTEMD_ALLOWEDCPUS_PREFIX_SIZE 7
-#define HWLOC_SYSTEMD_ALLOWEDCPUS_BYTE_FORMAT " 0x%02x"
-#define HWLOC_SYSTEMD_ALLOWEDCPUS_BYTE_SIZE 5
+#define HWLOC_SYSTEMD_ALLOWEDCPUS_BYTES_FORMAT " 0x%02x"
+#define HWLOC_SYSTEMD_ALLOWEDCPUS_BYTES_SIZE 5
 int hwloc_bitmap_systemd_snprintf(char * __hwloc_restrict buf, size_t buflen, const struct hwloc_bitmap_s * __hwloc_restrict set)
 {
   char *tmp = buf;
   int res, ret = 0;
-  if (buf == NULL && buflen == 0) {
-    ret = HWLOC_SYSTEMD_ALLOWEDCPUS_PREFIX_SIZE + (set->ulongs_count - 1) * 8 * HWLOC_SYSTEMD_ALLOWEDCPUS_BYTE_SIZE;
-    unsigned long last = set->ulongs[set->ulongs_count -1];
-    do ret += HWLOC_SYSTEMD_ALLOWEDCPUS_BYTE_SIZE;
-    while ((last >>= 8) > 0);
-    printf("Computed size: %d\n", ret);
-    return ret;
-  }
+  int bytes_count = (set->ulongs_count - 1) * 8 + 1;
+  unsigned long ulongs_current = set->ulongs[set->ulongs_count -1];
 
-  res = hwloc_snprintf(tmp, HWLOC_SYSTEMD_ALLOWEDCPUS_PREFIX_SIZE + 1, HWLOC_SYSTEMD_ALLOWEDCPUS_PREFIX_FORMAT, set->ulongs_count * 8);
+  while ((ulongs_current >>= 8) > 0)
+    bytes_count++;
+
+  if (buf == NULL && buflen == 0)
+    return HWLOC_SYSTEMD_ALLOWEDCPUS_PREFIX_SIZE + bytes_count * HWLOC_SYSTEMD_ALLOWEDCPUS_BYTES_SIZE;
+
+  res = hwloc_snprintf(tmp, HWLOC_SYSTEMD_ALLOWEDCPUS_PREFIX_SIZE + 1, HWLOC_SYSTEMD_ALLOWEDCPUS_PREFIX_FORMAT, bytes_count);
   if (res < 0)
     return -1;
   ret += res;
-  tmp = buf + ret;
   for (unsigned int i = 0; i < set->ulongs_count; i++) {
-    for (unsigned int j = 0; j < 8; j++) {
-      unsigned char b = (unsigned char) ((set->ulongs[i] >> (8 * j)) & 0xFF);
-      res = hwloc_snprintf(tmp + HWLOC_SYSTEMD_ALLOWEDCPUS_BYTE_SIZE * j, HWLOC_SYSTEMD_ALLOWEDCPUS_BYTE_SIZE + 1, HWLOC_SYSTEMD_ALLOWEDCPUS_BYTE_FORMAT, b);
+    ulongs_current = set->ulongs[i];
+    unsigned int j = 0;
+    while (j++ < 8 && (i < (set->ulongs_count - 1) || ulongs_current > 0)) { 
+      tmp = buf + ret; 
+      res = hwloc_snprintf(tmp, HWLOC_SYSTEMD_ALLOWEDCPUS_BYTES_SIZE + 1, HWLOC_SYSTEMD_ALLOWEDCPUS_BYTES_FORMAT, (unsigned char) ulongs_current & 0xFF);
       if (res < 0)
         return -1;
       ret += res;
-      printf("(%u) %lx (%u) b: 0x%02x tmp: '%s' @%u, buf: '%s' @%u 0x%lx\n", i, set->ulongs[i], j, b, tmp, res, buf, ret, set->ulongs[i] >> (8 * j) );
+      /* printf("(%u,%u) 0x%16lx tmp: '%s' @%u, buf: '%s' @%u\n", i, j, ulongs_current, tmp, res, buf, ret); */
+      ulongs_current >>= 8;
+      bytes_count--;
     }
-    tmp = buf + ret; 
-    printf("(%u) buf: '%s' @%u\n", i, buf, ret);
   }
-  printf("size: %d, buflen: %d\n", ret, buflen);
-  printf("result: %s\n", buf);
+  ret++; /* +1 for \0  written at the end by the last snprintf */
+
+  assert(bytes_count == 0);
+  assert(((size_t) ret) == buflen);
+
   return ret;
 }
 
