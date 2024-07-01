@@ -631,11 +631,6 @@ int hwloc_bitmap_systemd_asprintf(char ** strp, const struct hwloc_bitmap_s * __
   return hwloc_bitmap_systemd_snprintf(buf, len+1, set);
 }
 
-int hwloc_bitmap_systemd_sscanf(struct hwloc_bitmap_s *set, const char * __hwloc_restrict string)
-{
-    return -1;
-}
-
 int hwloc_bitmap_taskset_snprintf(char * __hwloc_restrict buf, size_t buflen, const struct hwloc_bitmap_s * __hwloc_restrict set)
 {
   ssize_t size = buflen;
